@@ -1,103 +1,83 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdbool.h>
 
 #define MAX_STUDENTS 50
-#define SUBJECTS      5
-#define PASS_MARK     33
+#define SUBJECTS     5
+#define PASS_MARK    33
 
-struct Student {
+typedef struct {
     char  name[50];
     int   roll;
-    int   marks[SUBJECTS];
     int   total;
     float percentage;
     char  grade;
-    char  result[5];        /* "PASS" or "FAIL" */
-};
+    bool  passed;
+} Student;
 
-char findGrade(float percentage)
-{
-    if (percentage >= 90) return 'A';
-    else if (percentage >= 75) return 'B';
-    else if (percentage >= 60) return 'C';
-    else if (percentage >= 33) return 'D';
-    else                       return 'F';
+static char findGrade(float p) {
+    if (p >= 90) return 'A';
+    if (p >= 75) return 'B';
+    if (p >= 60) return 'C';
+    if (p >= 33) return 'D';
+    return 'F';
 }
 
-int main(void)
-{
-    struct Student students[MAX_STUDENTS];
-    int n, i, j;
+int main(void) {
+    Student students[MAX_STUDENTS];
+    int n, topper = 0;
 
-    printf("=========================================\n");
-    printf("   STUDENT RESULT AND GRADE ANALYZER\n");
-    printf("=========================================\n\n");
+    printf("=========================================\n"
+           "   STUDENT RESULT AND GRADE ANALYZER\n"
+           "=========================================\n\n"
+           "Enter number of students: ");
 
-    printf("Enter number of students: ");
-    scanf("%d", &n);
-
-    if (n < 1 || n > MAX_STUDENTS) {
+    if (scanf("%d", &n) != 1 || n < 1 || n > MAX_STUDENTS) {
         printf("Please enter a number between 1 and %d.\n", MAX_STUDENTS);
-        return 0;
+        return 1;
     }
 
-    for (i = 0; i < n; i++) {
-        printf("\n----- Student %d -----\n", i + 1);
+    for (int i = 0; i < n; i++) {
+        Student *s = &students[i];
+        s->total  = 0;
+        s->passed = true;
 
+        printf("\n----- Student %d -----\n", i + 1);
         printf("Enter name: ");
-        scanf(" %[^\n]", students[i].name);  /* reads full name, spaces allowed */
+        scanf(" %49[^\n]", s->name);
 
         printf("Enter roll number: ");
-        scanf("%d", &students[i].roll);
+        scanf("%d", &s->roll);
 
-        students[i].total  = 0;
-        students[i].result[0] = '\0';
-        strcpy(students[i].result, "PASS");   /* assume pass until a subject fails */
-
-        for (j = 0; j < SUBJECTS; j++) {
+        for (int j = 0; j < SUBJECTS; j++) {
+            int mark;
             printf("Enter marks in subject %d (out of 100): ", j + 1);
-            scanf("%d", &students[i].marks[j]);
-
-            students[i].total += students[i].marks[j];
-
-            if (students[i].marks[j] < PASS_MARK)
-                strcpy(students[i].result, "FAIL");
+            scanf("%d", &mark);
+            s->total += mark;
+            if (mark < PASS_MARK) s->passed = false;
         }
 
-        students[i].percentage = students[i].total / (float)(SUBJECTS * 100) * 100;
+        s->percentage = (float)s->total / SUBJECTS;
+        s->grade = s->passed ? findGrade(s->percentage) : 'F';
 
-        students[i].grade = findGrade(students[i].percentage);
-
-        if (strcmp(students[i].result, "FAIL") == 0)
-            students[i].grade = 'F';
-    }
-
-    printf("\n\n================= RESULT SHEET =================\n");
-    printf("%-18s %-6s %-6s %-8s %-6s %-6s\n",
-           "Name", "Roll", "Total", "Percent", "Grade", "Result");
-    printf("-------------------------------------------------------\n");
-
-    for (i = 0; i < n; i++) {
-        printf("%-18s %-6d %-6d %-7.2f%% %-6c %-6s\n",
-               students[i].name,
-               students[i].roll,
-               students[i].total,
-               students[i].percentage,
-               students[i].grade,
-               students[i].result);
-    }
-    printf("===============================================\n");
-
-    int topper = 0;
-    for (i = 1; i < n; i++) {
-        if (students[i].total > students[topper].total)
+        if (s->total > students[topper].total)
             topper = i;
     }
 
-    printf("\nClass Topper: %s (Roll %d) with %.2f%%\n",
-           students[topper].name,
-           students[topper].roll,
-           students[topper].percentage);
+    printf("\n\n================= RESULT SHEET =================\n"
+           "%-18s %-6s %-6s %-8s %-6s %-6s\n"
+           "-------------------------------------------------------\n",
+           "Name", "Roll", "Total", "Percent", "Grade", "Result");
+
+    for (int i = 0; i < n; i++) {
+        Student *s = &students[i];
+        printf("%-18s %-6d %-6d %-7.2f%% %-6c %-6s\n",
+               s->name, s->roll, s->total, s->percentage,
+               s->grade, s->passed ? "PASS" : "FAIL");
+    }
+
+    printf("===============================================\n\n"
+           "Class Topper: %s (Roll %d) with %.2f%%\n",
+           students[topper].name, students[topper].roll, students[topper].percentage);
 
     return 0;
 }
